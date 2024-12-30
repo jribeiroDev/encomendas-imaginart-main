@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Order, Product } from '@/types';
 import OrderList from '@/components/OrderList';
@@ -7,7 +7,12 @@ import NewOrderForm from '@/components/NewOrderForm';
 import { ClipboardList, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProducts, getOrders, updateOrder, deleteOrder, createOrder } from '@/services/database';
+import { getProducts, getOrders, updateOrder, deleteOrder, createOrder, updateOrderProductStatus } from '@/services/database';
+
+interface OrderListProps {
+  onProductCheck: (orderId: string, productId: string, checked: boolean) => void;
+  checkedProducts: {[key: string]: boolean};
+}
 
 const Index = () => {
   const [showCompleted, setShowCompleted] = React.useState(false);
@@ -15,6 +20,7 @@ const Index = () => {
   const [showNewOrder, setShowNewOrder] = React.useState(false);
   const [editingOrder, setEditingOrder] = React.useState<string | null>(null);
   const queryClient = useQueryClient();
+  const [checkedProducts, setCheckedProducts] = useState<{[key: string]: boolean}>({});
 
   // Queries
   const { data: products = [] } = useQuery({
@@ -67,6 +73,21 @@ const Index = () => {
     },
   });
 
+  const updateProductStatusMutation = useMutation({
+    mutationFn: ({ orderId, productId, completed }: { 
+      orderId: string; 
+      productId: string; 
+      completed: boolean 
+    }) => updateOrderProductStatus(orderId, productId, completed),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: (error) => {
+      toast.error('Erro ao atualizar estado do produto');
+      console.error('Error updating product status:', error);
+    },
+  });
+
   const handleStatusChange = (orderId: string, status: 'pendente' | 'iniciada' | 'concluida') => {
     updateOrderMutation.mutate({ id: orderId, order: { status } });
   };
@@ -88,10 +109,28 @@ const Index = () => {
       updateOrderMutation.mutate({
         id: editingOrder,
         order: newOrder,
+      }, {
+        onSuccess: () => {
+          setEditingOrder(null);
+          setShowNewOrder(false);
+        }
       });
     } else {
-      createOrderMutation.mutate(newOrder);
+      createOrderMutation.mutate(newOrder, {
+        onSuccess: () => {
+          setShowNewOrder(false);
+        }
+      });
     }
+  };
+
+  const handleProductCheck = (orderId: string, productId: string, checked: boolean) => {
+    updateProductStatusMutation.mutate({ orderId, productId, completed: checked });
+  };
+
+  const handleCancelOrder = () => {
+    setShowNewOrder(false);
+    setEditingOrder(null);
   };
 
   return (
@@ -165,6 +204,8 @@ const Index = () => {
             onEditOrder={handleEditOrder}
             onDeleteOrder={handleDeleteOrder}
             showCompleted={showCompleted}
+            onProductCheck={handleProductCheck}
+            checkedProducts={checkedProducts}
           />
 
           {!showCompleted && (
@@ -174,6 +215,7 @@ const Index = () => {
                   products={products}
                   onSubmit={handleCreateOrder}
                   editingOrder={editingOrder ? orders.find(o => o.id === editingOrder) : undefined}
+                  onCancel={handleCancelOrder}
                 />
               ) : (
                 <Button

@@ -18,9 +18,10 @@ interface NewOrderFormProps {
   products: Product[];
   onSubmit: (order: Omit<Order, 'id'>) => void;
   editingOrder?: Order;
+  onCancel: () => void;
 }
 
-const NewOrderForm = ({ products, onSubmit, editingOrder }: NewOrderFormProps) => {
+const NewOrderForm = ({ products, onSubmit, editingOrder, onCancel }: NewOrderFormProps) => {
   const [orderName, setOrderName] = useState(editingOrder?.name || '');
   const [orderDescription, setOrderDescription] = useState(editingOrder?.description || '');
   const [orderProducts, setOrderProducts] = useState<{ productId: string; quantity: number }[]>(
@@ -51,11 +52,23 @@ const NewOrderForm = ({ products, onSubmit, editingOrder }: NewOrderFormProps) =
       return;
     }
 
+    const combinedProducts = orderProducts.reduce<{ productId: string; quantity: number }[]>(
+      (acc, current) => {
+        const existingProduct = acc.find(p => p.productId === current.productId);
+        if (existingProduct) {
+          existingProduct.quantity += current.quantity;
+          return acc;
+        }
+        return [...acc, { ...current }];
+      },
+      []
+    );
+
     onSubmit({
       name: orderName,
       description: orderDescription,
-      products: orderProducts,
-      status: 'pendente'
+      products: combinedProducts,
+      status: editingOrder?.status || 'pendente'
     });
 
     setOrderName('');
@@ -123,13 +136,29 @@ const NewOrderForm = ({ products, onSubmit, editingOrder }: NewOrderFormProps) =
           </div>
         ))}
 
-        <div className="flex gap-4">
-          <Button variant="outline" onClick={handleAddProduct} className="flex-1">
-            <Plus className="w-4 h-4 mr-2" />
-            Adicionar Produto
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handleAddProduct}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Adicionar Produto
+        </Button>
+
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+          >
+            Cancelar
           </Button>
-          <Button onClick={handleSubmit} className="flex-1">
-            {editingOrder ? 'Atualizar Encomenda' : 'Criar Encomenda'}
+          <Button 
+            type="button" 
+            onClick={handleSubmit}
+          >
+            {editingOrder ? 'Atualizar' : 'Criar'} Encomenda
           </Button>
         </div>
       </div>

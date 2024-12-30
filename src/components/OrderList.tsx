@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/select";
 import { Order, Product } from '@/types';
 import { Edit, Trash2 } from 'lucide-react';
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
 interface OrderListProps {
   orders: Order[];
@@ -18,9 +20,20 @@ interface OrderListProps {
   onEditOrder: (orderId: string) => void;
   onDeleteOrder: (orderId: string) => void;
   showCompleted?: boolean;
+  onProductCheck: (orderId: string, productId: string, checked: boolean) => void;
+  checkedProducts: {[key: string]: boolean};
 }
 
-const OrderList = ({ orders, products, onStatusChange, onEditOrder, onDeleteOrder, showCompleted = false }: OrderListProps) => {
+const OrderList = ({ 
+  orders, 
+  products, 
+  onStatusChange, 
+  onEditOrder, 
+  onDeleteOrder, 
+  showCompleted = false,
+  onProductCheck,
+  checkedProducts 
+}: OrderListProps) => {
   const filteredOrders = orders.filter(order => 
     showCompleted ? order.status === 'concluida' : order.status !== 'concluida'
   );
@@ -59,8 +72,24 @@ const OrderList = ({ orders, products, onStatusChange, onEditOrder, onDeleteOrde
                 {order.products.map((orderProduct) => {
                   const product = products.find(p => p.id === orderProduct.productId);
                   return product ? (
-                    <div key={`${order.id}-${orderProduct.productId}`} className="text-sm text-muted-foreground">
-                      {orderProduct.quantity}x {product.name} - €{(product.price * orderProduct.quantity).toFixed(2)}
+                    <div key={`${order.id}-${orderProduct.productId}`} 
+                         className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Checkbox 
+                        id={`${order.id}-${orderProduct.productId}`}
+                        checked={orderProduct.completed || false}
+                        onCheckedChange={(checked) => 
+                          onProductCheck(order.id, orderProduct.productId, checked as boolean)
+                        }
+                      />
+                      <label 
+                        htmlFor={`${order.id}-${orderProduct.productId}`}
+                        className={cn(
+                          "flex-1",
+                          orderProduct.completed && "line-through text-muted-foreground"
+                        )}
+                      >
+                        {orderProduct.quantity}x {product.name} - €{(product.price * orderProduct.quantity).toFixed(2)}
+                      </label>
                     </div>
                   ) : null;
                 })}

@@ -7,6 +7,7 @@ export interface Product {
 export interface OrderProduct {
   productId: string;
   quantity: number;
+  completed?: boolean;
 }
 
 export interface Order {

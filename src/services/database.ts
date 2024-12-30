@@ -6,7 +6,7 @@ export const getProducts = async () => {
   const { data, error } = await supabase
     .from('products')
     .select('*');
-  
+
   if (error) throw error;
   return data as Product[];
 };
@@ -17,7 +17,7 @@ export const createProduct = async (product: Omit<Product, 'id'>) => {
     .insert([product])
     .select()
     .single();
-  
+
   if (error) throw error;
   return data as Product;
 };
@@ -27,7 +27,7 @@ export const deleteProduct = async (id: string) => {
     .from('products')
     .delete()
     .eq('id', id);
-  
+
   if (error) throw error;
 };
 
@@ -35,26 +35,25 @@ export const deleteProduct = async (id: string) => {
 export const getOrders = async () => {
   const { data: orders, error: ordersError } = await supabase
     .from('orders')
-    .select(`
-      *,
-      order_products (
-        product_id,
-        quantity
-      )
-    `);
-  
+    .select('*');
+
   if (ordersError) throw ordersError;
 
-  // Transform the data to match our Order type
-  return (orders || []).map(order => ({
-    id: order.id,
-    name: order.name,
-    description: order.description,
-    status: order.status,
-    products: order.order_products.map((op: any) => ({
-      productId: op.product_id,
-      quantity: op.quantity
-    }))
+  const { data: orderProducts, error: productsError } = await supabase
+    .from('order_products')
+    .select('*');
+
+  if (productsError) throw productsError;
+
+  return orders.map(order => ({
+    ...order,
+    products: orderProducts
+      .filter(op => op.order_id === order.id)
+      .map(op => ({
+        productId: op.product_id,
+        quantity: op.quantity,
+        completed: op.completed || false
+      }))
   })) as Order[];
 };
 
@@ -148,6 +147,19 @@ export const deleteOrder = async (id: string) => {
     .from('orders')
     .delete()
     .eq('id', id);
-  
+
+  if (error) throw error;
+};
+
+export const updateOrderProductStatus = async (
+  orderId: string,
+  productId: string,
+  completed: boolean
+) => {
+  const { error } = await supabase
+    .from('order_products')
+    .update({ completed })
+    .match({ order_id: orderId, product_id: productId });
+
   if (error) throw error;
 };
