@@ -8,6 +8,7 @@ import { ClipboardList, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProducts, getOrders, updateOrder, deleteOrder, createOrder, updateOrderProductStatus } from '@/services/database';
+import LoginForm from '@/components/LoginForm';
 
 interface OrderListProps {
   onProductCheck: (orderId: string, productId: string, checked: boolean) => void;
@@ -19,18 +20,22 @@ const Index = () => {
   const [showProducts, setShowProducts] = React.useState(false);
   const [showNewOrder, setShowNewOrder] = React.useState(false);
   const [editingOrder, setEditingOrder] = React.useState<string | null>(null);
-  const queryClient = useQueryClient();
   const [checkedProducts, setCheckedProducts] = useState<{[key: string]: boolean}>({});
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  const queryClient = useQueryClient();
 
-  // Queries
+  // Queries - Add enabled flag
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: getProducts,
+    enabled: isAuthenticated // Only fetch when authenticated
   });
 
   const { data: orders = [] } = useQuery({
     queryKey: ['orders'],
     queryFn: getOrders,
+    enabled: isAuthenticated // Only fetch when authenticated
   });
 
   // Mutations
@@ -132,6 +137,10 @@ const Index = () => {
     setShowNewOrder(false);
     setEditingOrder(null);
   };
+
+  if (!isAuthenticated) {
+    return <LoginForm onLogin={setIsAuthenticated} />;
+  }
 
   return (
     <div className="container mx-auto py-8 px-4">

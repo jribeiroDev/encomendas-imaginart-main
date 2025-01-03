@@ -211,3 +211,16 @@ export const updateFinancialValues = async (values: Partial<FinancialValues>): P
   if (error) throw error;
   return data;
 };
+
+// Add login function
+export const loginUser = async (username: string, password: string) => {
+  const { data, error } = await supabase
+    .from('users')
+    .select()
+    .eq('username', username)
+    .eq('password', password)
+    .single();
+
+  if (error) throw error;
+  return data;
+};
