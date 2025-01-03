@@ -190,6 +190,21 @@ const Index = () => {
         </div>
       ) : (
         <>
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => setShowNewOrder(true)}>
+              Nova Encomenda
+            </Button>
+          </div>
+
+          {showNewOrder && (
+            <NewOrderForm
+              products={products}
+              onSubmit={handleCreateOrder}
+              editingOrder={editingOrder ? orders.find(o => o.id === editingOrder) : undefined}
+              onCancel={handleCancelOrder}
+            />
+          )}
+
           <OrderList
             orders={orders}
             products={products}
@@ -200,26 +215,6 @@ const Index = () => {
             onProductCheck={handleProductCheck}
             checkedProducts={checkedProducts}
           />
-
-          {!showCompleted && (
-            <div className="mt-8">
-              {showNewOrder ? (
-                <NewOrderForm
-                  products={products}
-                  onSubmit={handleCreateOrder}
-                  editingOrder={editingOrder ? orders.find(o => o.id === editingOrder) : undefined}
-                  onCancel={handleCancelOrder}
-                />
-              ) : (
-                <Button
-                  onClick={() => setShowNewOrder(true)}
-                  className="mx-auto block"
-                >
-                  Nova Encomenda
-                </Button>
-              )}
-            </div>
-          )}
         </>
       )}
     </div>
