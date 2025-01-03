@@ -122,36 +122,51 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
   return (
     <div className="space-y-4">
       <Card className="p-4">
-        <div className="flex gap-4 mb-4">
-          <Input
-            placeholder="Nome"
-            value={newProductName}
-            onChange={(e) => setNewProductName(e.target.value)}
-          />
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="Preço"
-            value={newProductPrice}
-            onChange={(e) => setNewProductPrice(e.target.value)}
-          />
-          <Input
-            type="number"
-            min="0"
-            placeholder="Quantidade"
-            value={newProductQuantity}
-            onChange={(e) => setNewProductQuantity(e.target.value)}
-          />
-          <Button onClick={editingProduct ? handleUpdateProduct : handleAddProduct}>
-            <Plus className="w-4 h-4 mr-2" />
-            {editingProduct ? 'Atualizar' : 'Adicionar'}
-          </Button>
-          {editingProduct && (
-            <Button variant="outline" onClick={() => setEditingProduct(null)}>
-              Cancelar
+        <div className="space-y-4">
+          <div>
+            <Input
+              placeholder="Nome do produto"
+              value={newProductName}
+              onChange={(e) => setNewProductName(e.target.value)}
+            />
+          </div>
+          <div>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="Preço"
+              value={newProductPrice}
+              onChange={(e) => setNewProductPrice(e.target.value)}
+            />
+          </div>
+          <div>
+            <Input
+              type="number"
+              min="0"
+              placeholder="Quantidade"
+              value={newProductQuantity}
+              onChange={(e) => setNewProductQuantity(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              className="w-full"
+              onClick={editingProduct ? handleUpdateProduct : handleAddProduct}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {editingProduct ? 'Atualizar' : 'Adicionar'}
             </Button>
-          )}
+            {editingProduct && (
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setEditingProduct(null)}
+              >
+                Cancelar
+              </Button>
+            )}
+          </div>
         </div>
       </Card>
 
