@@ -14,12 +14,24 @@ export const getProducts = async () => {
 export const createProduct = async (product: Omit<Product, 'id'>) => {
   const { data, error } = await supabase
     .from('products')
-    .insert([product])
+    .insert(product)
     .select()
     .single();
 
   if (error) throw error;
-  return data as Product;
+  return data;
+};
+
+export const updateProduct = async (product: Product) => {
+  const { data, error } = await supabase
+    .from('products')
+    .update(product)
+    .eq('id', product.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 };
 
 export const deleteProduct = async (id: string) => {

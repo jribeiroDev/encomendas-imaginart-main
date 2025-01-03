@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Product } from '@/types';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createProduct, deleteProduct } from '@/services/database';
+import { createProduct, deleteProduct, updateProduct } from '@/services/database';
 
 interface ProductManagementProps {
   products: Product[];
@@ -16,6 +16,8 @@ interface ProductManagementProps {
 const ProductManagement = ({ products, onProductsChange }: ProductManagementProps) => {
   const [newProductName, setNewProductName] = useState('');
   const [newProductPrice, setNewProductPrice] = useState('');
+  const [newProductQuantity, setNewProductQuantity] = useState('');
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const queryClient = useQueryClient();
 
   const createProductMutation = useMutation({
@@ -25,6 +27,7 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
       onProductsChange();
       setNewProductName('');
       setNewProductPrice('');
+      setNewProductQuantity('');
       toast.success('Produto criado com sucesso');
     },
     onError: (error) => {
@@ -46,26 +49,69 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
     },
   });
 
+  const updateProductMutation = useMutation({
+    mutationFn: (product: Product) => updateProduct(product),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      onProductsChange();
+      setEditingProduct(null);
+      toast.success('Produto atualizado com sucesso');
+    },
+    onError: (error) => {
+      toast.error('Erro ao atualizar produto');
+      console.error('Error updating product:', error);
+    },
+  });
+
   const handleAddProduct = () => {
-    if (!newProductName || !newProductPrice) {
+    if (!newProductName || !newProductPrice || !newProductQuantity) {
       toast.error('Por favor, preencha todos os campos');
       return;
     }
 
     const price = parseFloat(newProductPrice);
-    if (isNaN(price) || price <= 0) {
-      toast.error('Por favor, insira um preço válido');
+    const quantity = parseInt(newProductQuantity);
+    
+    if (isNaN(price) || price <= 0 || isNaN(quantity) || quantity < 0) {
+      toast.error('Por favor, insira valores válidos');
       return;
     }
 
     createProductMutation.mutate({
       name: newProductName,
       price: price,
+      quantity: quantity,
     });
   };
 
   const handleDeleteProduct = (productId: string) => {
     deleteProductMutation.mutate(productId);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setNewProductName(product.name);
+    setNewProductPrice(product.price.toString());
+    setNewProductQuantity(product.quantity?.toString() || '0');
+  };
+
+  const handleUpdateProduct = () => {
+    if (!editingProduct) return;
+
+    const price = parseFloat(newProductPrice);
+    const quantity = parseInt(newProductQuantity);
+    
+    if (isNaN(price) || price <= 0 || isNaN(quantity) || quantity < 0) {
+      toast.error('Por favor, insira valores válidos');
+      return;
+    }
+
+    updateProductMutation.mutate({
+      ...editingProduct,
+      name: newProductName,
+      price: price,
+      quantity: quantity,
+    });
   };
 
   // Sort products alphabetically by name
@@ -78,7 +124,7 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
       <Card className="p-4">
         <div className="flex gap-4 mb-4">
           <Input
-            placeholder="Nome do produto"
+            placeholder="Nome"
             value={newProductName}
             onChange={(e) => setNewProductName(e.target.value)}
           />
@@ -90,10 +136,22 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
             value={newProductPrice}
             onChange={(e) => setNewProductPrice(e.target.value)}
           />
-          <Button onClick={handleAddProduct}>
+          <Input
+            type="number"
+            min="0"
+            placeholder="Quantidade"
+            value={newProductQuantity}
+            onChange={(e) => setNewProductQuantity(e.target.value)}
+          />
+          <Button onClick={editingProduct ? handleUpdateProduct : handleAddProduct}>
             <Plus className="w-4 h-4 mr-2" />
-            Adicionar
+            {editingProduct ? 'Atualizar' : 'Adicionar'}
           </Button>
+          {editingProduct && (
+            <Button variant="outline" onClick={() => setEditingProduct(null)}>
+              Cancelar
+            </Button>
+          )}
         </div>
       </Card>
 
@@ -105,14 +163,26 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
               <span className="ml-4 text-muted-foreground">
                 €{product.price.toFixed(2)}
               </span>
+              <span className="ml-4 text-muted-foreground">
+                Qtd: {product.quantity || 0}
+              </span>
             </div>
-            <Button
-              variant="destructive"
-              size="icon"
-              onClick={() => handleDeleteProduct(product.id)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleEditProduct(product)}
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="destructive"
+                size="icon"
+                onClick={() => handleDeleteProduct(product.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </Card>
       ))}

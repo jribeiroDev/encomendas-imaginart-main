@@ -77,6 +77,9 @@ const NewOrderForm = ({ products, onSubmit, editingOrder, onCancel }: NewOrderFo
     toast.success(editingOrder ? 'Encomenda atualizada com sucesso' : 'Encomenda criada com sucesso');
   };
 
+  const sortedProducts = products
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <Card className="p-4">
       <div className="space-y-4">
@@ -106,9 +109,9 @@ const NewOrderForm = ({ products, onSubmit, editingOrder, onCancel }: NewOrderFo
                 <SelectValue placeholder="Selecione um produto" />
               </SelectTrigger>
               <SelectContent>
-                {products.map((product) => (
+                {sortedProducts.map((product) => (
                   <SelectItem key={product.id} value={product.id}>
-                    {product.name} - €{product.price.toFixed(2)}
+                    {product.name} - €{product.price.toFixed(2)} - Stock: {product.quantity}
                   </SelectItem>
                 ))}
               </SelectContent>
