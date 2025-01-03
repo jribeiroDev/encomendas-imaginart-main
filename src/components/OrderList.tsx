@@ -63,8 +63,14 @@ const OrderList = ({
     }
   });
 
-  const filteredOrders = orders.filter(order => 
-    showCompleted ? order.status === 'concluida' : order.status !== 'concluida'
+  // Sort orders alphabetically by name
+  const sortedOrders = [...orders].sort((a, b) => 
+    a.name.localeCompare(b.name, 'pt', { sensitivity: 'base' })
+  );
+
+  // Filter orders based on showCompleted
+  const filteredOrders = sortedOrders.filter(
+    (order) => showCompleted ? order.status === 'concluida' : order.status !== 'concluida'
   );
 
   const getStatusColor = (status: string) => {
@@ -107,7 +113,7 @@ const OrderList = ({
   };
 
   // Calculate grand totals
-  const grandRemainingTotal = orders.reduce((sum, order) => sum + calculateRemainingTotal(order), 0);
+  const grandRemainingTotal = sortedOrders.reduce((sum, order) => sum + calculateRemainingTotal(order), 0);
   const grandTotal = grandRemainingTotal + 
     (financialValues?.banco || 0) + 
     (financialValues?.casa || 0);
@@ -318,7 +324,7 @@ const OrderList = ({
       ))}
       {filteredOrders.length === 0 && (
         <div className="text-center text-muted-foreground py-8">
-          Sem encomendas {showCompleted ? 'concluídas' : 'ativas'}
+          {showCompleted ? 'Sem encomendas concluídas' : 'Sem encomendas pendentes'}
         </div>
       )}
     </div>
