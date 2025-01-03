@@ -68,6 +68,11 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
     deleteProductMutation.mutate(productId);
   };
 
+  // Sort products alphabetically by name
+  const sortedProducts = [...products].sort((a, b) => 
+    a.name.localeCompare(b.name)
+  );
+
   return (
     <div className="space-y-4">
       <Card className="p-4">
@@ -92,7 +97,7 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
         </div>
       </Card>
 
-      {products.map((product) => (
+      {sortedProducts.map((product) => (
         <Card key={product.id} className="p-4">
           <div className="flex justify-between items-center">
             <div>

@@ -163,3 +163,51 @@ export const updateOrderProductStatus = async (
 
   if (error) throw error;
 };
+
+// Add new interface for financial values
+export interface FinancialValues {
+  id?: string;
+  banco: number;
+  casa: number;
+}
+
+// Add functions to get and update financial values
+export const getFinancialValues = async (): Promise<FinancialValues> => {
+  const { data, error } = await supabase
+    .from('financial_values')
+    .select('*')
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No record found, create default values
+      return createFinancialValues({ banco: 0, casa: 0 });
+    }
+    throw error;
+  }
+
+  return data;
+};
+
+export const createFinancialValues = async (values: Omit<FinancialValues, 'id'>): Promise<FinancialValues> => {
+  const { data, error } = await supabase
+    .from('financial_values')
+    .insert(values)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const updateFinancialValues = async (values: Partial<FinancialValues>): Promise<FinancialValues> => {
+  const { data, error } = await supabase
+    .from('financial_values')
+    .update(values)
+    .eq('id', values.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};

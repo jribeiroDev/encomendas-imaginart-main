@@ -181,22 +181,6 @@ const Index = () => {
         </div>
       ) : (
         <>
-          {!showCompleted && (
-            <div className="bg-card p-4 rounded-lg mb-8">
-              <div className="text-2xl font-semibold">
-                Total: €{orders
-                  .filter(order => order.status !== 'concluida')
-                  .reduce((total, order) => {
-                    return total + order.products.reduce((orderTotal, orderProduct) => {
-                      const product = products.find(p => p.id === orderProduct.productId);
-                      return orderTotal + (product ? product.price * orderProduct.quantity : 0);
-                    }, 0);
-                  }, 0)
-                  .toFixed(2)}
-              </div>
-            </div>
-          )}
-
           <OrderList
             orders={orders}
             products={products}
