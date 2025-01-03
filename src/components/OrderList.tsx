@@ -106,11 +106,11 @@ const OrderList = ({
     return total - paid;
   };
 
-  // Calculate grand totals including manual values
-  const grandTotal = orders.reduce((sum, order) => sum + calculateOrderTotal(order), 0) + 
-    (financialValues?.banco || 0) + (financialValues?.casa || 0);
-  const grandPaidTotal = orders.reduce((sum, order) => sum + calculatePaidTotal(order), 0);
+  // Calculate grand totals
   const grandRemainingTotal = orders.reduce((sum, order) => sum + calculateRemainingTotal(order), 0);
+  const grandTotal = grandRemainingTotal + 
+    (financialValues?.banco || 0) + 
+    (financialValues?.casa || 0);
 
   const handleSaveBanco = () => {
     const value = parseFloat(tempBancoValue);
@@ -146,10 +146,7 @@ const OrderList = ({
         <div className="space-y-2">
           <div className="font-medium">Resumo de Valores:</div>
           <div className="text-sm text-muted-foreground space-y-2">
-            <div>Valor Total: €{grandTotal.toFixed(2)}</div>
-            <div>Valor Pago: €{grandPaidTotal.toFixed(2)}</div>
             <div>Valor em Falta: €{grandRemainingTotal.toFixed(2)}</div>
-            
             <div className="flex items-center gap-2">
               <div>Valor Banco:</div>
               {isEditingBanco ? (
@@ -226,6 +223,10 @@ const OrderList = ({
                   </Button>
                 </div>
               )}
+            </div>
+
+            <div className="pt-2 border-t">
+              <div className="font-medium">Valor Total: €{grandTotal.toFixed(2)}</div>
             </div>
           </div>
         </div>
