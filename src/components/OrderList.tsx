@@ -20,7 +20,7 @@ import { getFinancialValues, updateFinancialValues } from "@/services/database";
 interface OrderListProps {
   orders: Order[];
   products: Product[];
-  onStatusChange: (orderId: string, status: 'pendente' | 'iniciada' | 'concluida') => void;
+  onStatusChange: (orderId: string, status: 'pendente' | 'iniciada' | 'falta_pagamento' | 'concluida') => void;
   onEditOrder: (orderId: string) => void;
   onDeleteOrder: (orderId: string) => void;
   showCompleted?: boolean;
@@ -73,16 +73,33 @@ const OrderList = ({
     (order) => showCompleted ? order.status === 'concluida' : order.status !== 'concluida'
   );
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pendente':
+        return 'Pendente';
+      case 'iniciada':
+        return 'Iniciada';
+      case 'falta_pagamento':
+        return 'Falta Pagamento';
+      case 'concluida':
+        return 'Concluída';
+      default:
+        return status;
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pendente':
-        return 'bg-[#FDE1D3]';
+        return 'text-yellow-600';
       case 'iniciada':
-        return 'bg-[#E3F5FF]';
+        return 'text-blue-600';
+      case 'falta_pagamento':
+        return 'text-red-600';
       case 'concluida':
-        return 'bg-[#F2FCE2]';
+        return 'text-green-600';
       default:
-        return 'bg-gray-100';
+        return '';
     }
   };
 
@@ -288,17 +305,25 @@ const OrderList = ({
                 )}
               </div>
             </div>
-            <div className="flex flex-row sm:flex-col justify-end gap-2">
+            <div className="flex items-center gap-2">
               <Select
                 value={order.status}
-                onValueChange={(value: 'pendente' | 'iniciada' | 'concluida') => onStatusChange(order.id, value)}
+                onValueChange={(value) => onStatusChange(order.id, value as 'pendente' | 'iniciada' | 'falta_pagamento' | 'concluida')}
               >
-                <SelectTrigger className={`w-[130px] ${getStatusColor(order.status)}`}>
-                  <SelectValue />
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Selecione o estado">
+                    <span className={cn(
+                      getStatusColor(order.status),
+                      "whitespace-nowrap"
+                    )}>
+                      {getStatusLabel(order.status)}
+                    </span>
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pendente">Pendente</SelectItem>
                   <SelectItem value="iniciada">Iniciada</SelectItem>
+                  <SelectItem value="falta_pagamento">Falta Pagamento</SelectItem>
                   <SelectItem value="concluida">Concluída</SelectItem>
                 </SelectContent>
               </Select>
