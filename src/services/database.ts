@@ -14,7 +14,12 @@ export const getProducts = async () => {
 export const createProduct = async (product: Omit<Product, 'id'>) => {
   const { data, error } = await supabase
     .from('products')
-    .insert(product)
+    .insert({
+      name: product.name,
+      price: product.price,
+      quantity: product.quantity,
+      max_quantity: product.quantity // Store initial quantity as max
+    })
     .select()
     .single();
 
@@ -25,7 +30,12 @@ export const createProduct = async (product: Omit<Product, 'id'>) => {
 export const updateProduct = async (product: Product) => {
   const { data, error } = await supabase
     .from('products')
-    .update(product)
+    .update({
+      name: product.name,
+      price: product.price,
+      quantity: product.quantity,
+      max_quantity: product.quantity // Update max when quantity is updated
+    })
     .eq('id', product.id)
     .select()
     .single();
@@ -70,97 +80,210 @@ export const getOrders = async () => {
 };
 
 export const createOrder = async (order: Omit<Order, 'id'>) => {
-  // Start a Supabase transaction
-  const { data: newOrder, error: orderError } = await supabase
-    .from('orders')
-    .insert({
-      name: order.name,
-      description: order.description,
-      status: order.status
-    })
-    .select()
-    .single();
-
-  if (orderError) throw orderError;
-
-  // Insert order products
-  const orderProducts = order.products.map(product => ({
-    order_id: newOrder.id,
-    product_id: product.productId,
-    quantity: product.quantity
-  }));
-
-  const { error: productsError } = await supabase
-    .from('order_products')
-    .insert(orderProducts);
-
-  if (productsError) {
-    // If there's an error inserting products, we should delete the order
-    await supabase
+  try {
+    // Create the order first
+    const { data: newOrder, error: orderError } = await supabase
       .from('orders')
-      .delete()
-      .eq('id', newOrder.id);
-    throw productsError;
-  }
+      .insert({
+        name: order.name,
+        description: order.description,
+        status: order.status
+      })
+      .select()
+      .single();
 
-  // Return the complete order
-  return {
-    ...newOrder,
-    products: order.products
-  } as Order;
+    if (orderError) throw orderError;
+
+    // Update product quantities and create order_products
+    for (const orderProduct of order.products) {
+      // Get current product
+      const { data: product } = await supabase
+        .from('products')
+        .select('quantity')
+        .eq('id', orderProduct.productId)
+        .single();
+
+      if (product) {
+        // Calculate new quantity, ensuring it doesn't go below 0
+        const newQuantity = Math.max(0, product.quantity - orderProduct.quantity);
+
+        // Update product with new quantity
+        await supabase
+          .from('products')
+          .update({ quantity: newQuantity })
+          .eq('id', orderProduct.productId)
+          .select()
+          .single();
+
+        // Create order_product entry
+        await supabase
+          .from('order_products')
+          .insert({
+            order_id: newOrder.id,
+            product_id: orderProduct.productId,
+            quantity: orderProduct.quantity
+          });
+      }
+    }
+
+    return {
+      ...newOrder,
+      products: order.products
+    } as Order;
+  } catch (error) {
+    console.error('Error in createOrder:', error);
+    throw error;
+  }
 };
 
 export const updateOrder = async (id: string, order: Partial<Order>) => {
-  const { data, error: orderError } = await supabase
-    .from('orders')
-    .update({
-      name: order.name,
-      description: order.description,
-      status: order.status
-    })
-    .eq('id', id)
-    .select()
-    .single();
+  try {
+    // Get original order products first
+    const { data: originalOrder } = await supabase
+      .from('orders')
+      .select(`
+        status,
+        order_products (
+          product_id,
+          quantity
+        )
+      `)
+      .eq('id', id)
+      .single();
 
-  if (orderError) throw orderError;
+    if (originalOrder) {
+      // First restore quantities from original order if not completed
+      if (originalOrder.status !== 'concluida') {
+        for (const oldProduct of originalOrder.order_products) {
+          const { data: product } = await supabase
+            .from('products')
+            .select('quantity, max_quantity')
+            .eq('id', oldProduct.product_id)
+            .single();
 
-  if (order.products) {
-    // Delete existing order products
-    const { error: deleteError } = await supabase
-      .from('order_products')
-      .delete()
-      .eq('order_id', id);
+          if (product) {
+            // Restore quantity but don't exceed max_quantity
+            const restoredQuantity = Math.min(
+              product.max_quantity,
+              product.quantity + oldProduct.quantity
+            );
 
-    if (deleteError) throw deleteError;
+            await supabase
+              .from('products')
+              .update({ quantity: restoredQuantity })
+              .eq('id', oldProduct.product_id);
+          }
+        }
+      }
+    }
 
-    // Insert new order products
-    const orderProducts = order.products.map(product => ({
-      order_id: id,
-      product_id: product.productId,
-      quantity: product.quantity
-    }));
+    // Update the order details
+    const { data: updatedOrder, error: orderError } = await supabase
+      .from('orders')
+      .update({
+        name: order.name,
+        description: order.description,
+        status: order.status
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    const { error: productsError } = await supabase
-      .from('order_products')
-      .insert(orderProducts);
+    if (orderError) throw orderError;
 
-    if (productsError) throw productsError;
+    // Handle new order products
+    if (order.products) {
+      // Delete old order_products
+      await supabase
+        .from('order_products')
+        .delete()
+        .eq('order_id', id);
+
+      // Add new order_products and update quantities
+      for (const newProduct of order.products) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('quantity')
+          .eq('id', newProduct.productId)
+          .single();
+
+        if (product) {
+          // Update product quantity
+          const newQuantity = Math.max(0, product.quantity - newProduct.quantity);
+          await supabase
+            .from('products')
+            .update({ quantity: newQuantity })
+            .eq('id', newProduct.productId);
+
+          // Add new order_product
+          await supabase
+            .from('order_products')
+            .insert({
+              order_id: id,
+              product_id: newProduct.productId,
+              quantity: newProduct.quantity
+            });
+        }
+      }
+    }
+
+    return {
+      ...updatedOrder,
+      products: order.products || []
+    } as Order;
+  } catch (error) {
+    console.error('Error in updateOrder:', error);
+    throw error;
   }
-
-  return {
-    ...data,
-    products: order.products || []
-  } as Order;
 };
 
 export const deleteOrder = async (id: string) => {
-  // The order_products will be automatically deleted due to ON DELETE CASCADE
-  const { error } = await supabase
-    .from('orders')
-    .delete()
-    .eq('id', id);
+  try {
+    const { data: orderData } = await supabase
+      .from('orders')
+      .select(`
+        status,
+        order_products (
+          product_id,
+          quantity
+        )
+      `)
+      .eq('id', id)
+      .single();
 
-  if (error) throw error;
+    if (orderData && orderData.status !== 'concluida') {
+      for (const orderProduct of orderData.order_products) {
+        // Get product with max_quantity
+        const { data: product } = await supabase
+          .from('products')
+          .select('quantity, max_quantity')
+          .eq('id', orderProduct.product_id)
+          .single();
+
+        if (product) {
+          // Restore quantity but don't exceed max_quantity
+          const newQuantity = Math.min(
+            product.max_quantity,
+            product.quantity + orderProduct.quantity
+          );
+
+          await supabase
+            .from('products')
+            .update({ quantity: newQuantity })
+            .eq('id', orderProduct.product_id);
+        }
+      }
+    }
+
+    await supabase
+      .from('orders')
+      .delete()
+      .eq('id', id);
+
+  } catch (error) {
+    console.error('Error in deleteOrder:', error);
+    throw error;
+  }
 };
 
 export const updateOrderProductStatus = async (

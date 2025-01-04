@@ -288,6 +288,7 @@ const OrderList = ({
                       >
                         {orderProduct.quantity}x {product.name} - €{(product.price * orderProduct.quantity).toFixed(2)}
                         {isCompleted && " (pago)"}
+                        {product.quantity <= 0 && " (Sem Stock)"}
                       </label>
                     </div>
                   ) : null;

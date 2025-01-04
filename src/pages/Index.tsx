@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Order, Product } from '@/types';
 import OrderList from '@/components/OrderList';
 import ProductManagement from '@/components/ProductManagement';
-import NewOrderForm from '@/components/NewOrderForm';
 import { ClipboardList, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProducts, getOrders, updateOrder, deleteOrder, createOrder, updateOrderProductStatus } from '@/services/database';
 import LoginForm from '@/components/LoginForm';
+import NewOrderForm from '@/components/NewOrderForm';
 
 interface OrderListProps {
   onProductCheck: (orderId: string, productId: string, checked: boolean) => void;
@@ -26,16 +26,16 @@ const Index = () => {
   const queryClient = useQueryClient();
 
   // Queries - Add enabled flag
-  const { data: products = [] } = useQuery({
+  const { data: products = [], refetch: refetchProducts } = useQuery({
     queryKey: ['products'],
     queryFn: getProducts,
-    enabled: isAuthenticated // Only fetch when authenticated
+    enabled: isAuthenticated
   });
 
-  const { data: orders = [] } = useQuery({
+  const { data: orders = [], refetch: refetchOrders } = useQuery({
     queryKey: ['orders'],
     queryFn: getOrders,
-    enabled: isAuthenticated // Only fetch when authenticated
+    enabled: isAuthenticated
   });
 
   // Mutations
@@ -45,7 +45,7 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       toast.success('Encomenda criada com sucesso');
       setShowNewOrder(false);
-      setEditingOrder(null);
+      setEditingOrder(null);1
     },
     onError: (error) => {
       toast.error('Erro ao criar encomenda');
@@ -105,27 +105,50 @@ const Index = () => {
     }
   };
 
-  const handleDeleteOrder = (orderId: string) => {
-    deleteOrderMutation.mutate(orderId);
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      await deleteOrder(orderId);
+      
+      // Force immediate refetch of both products and orders
+      await Promise.all([
+        refetchProducts(),
+        refetchOrders(),
+        queryClient.invalidateQueries({ queryKey: ['products'] }),
+        queryClient.invalidateQueries({ queryKey: ['orders'] })
+      ]);
+      
+      toast.success('Encomenda eliminada com sucesso');
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast.error('Erro ao eliminar encomenda');
+    }
   };
 
-  const handleCreateOrder = (newOrder: Omit<Order, 'id'>) => {
-    if (editingOrder) {
-      updateOrderMutation.mutate({
-        id: editingOrder,
-        order: newOrder,
-      }, {
-        onSuccess: () => {
-          setEditingOrder(null);
-          setShowNewOrder(false);
-        }
-      });
-    } else {
-      createOrderMutation.mutate(newOrder, {
-        onSuccess: () => {
-          setShowNewOrder(false);
-        }
-      });
+  const handleOrderSubmit = async (orderData: Omit<Order, 'id'> & { id?: string }) => {
+    try {
+      if (editingOrder && orderData.id) {
+        // Update existing order
+        await updateOrder(orderData.id, orderData);
+        toast.success('Encomenda atualizada com sucesso!');
+      } else {
+        // Create new order
+        await createOrder(orderData);
+        toast.success('Encomenda criada com sucesso!');
+      }
+      
+      // Refresh data
+      await Promise.all([
+        refetchOrders(),
+        refetchProducts(),
+        queryClient.invalidateQueries({ queryKey: ['orders'] }),
+        queryClient.invalidateQueries({ queryKey: ['products'] })
+      ]);
+
+      setShowNewOrder(false);
+      setEditingOrder(null);
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      toast.error('Erro ao salvar encomenda');
     }
   };
 
@@ -145,7 +168,7 @@ const Index = () => {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-        <h1 className="text-3xl font-bold">Encomendas</h1>
+        <h1 className="text-3xl font-bold">Encomendas Imagin'Arte</h1>
         <div className="flex gap-4">
           {!showCompleted && (
             <Button
@@ -185,7 +208,7 @@ const Index = () => {
           <h2 className="text-xl font-semibold mb-4">Gerir Produtos</h2>
           <ProductManagement
             products={products}
-            onProductsChange={() => queryClient.invalidateQueries({ queryKey: ['products'] })}
+            onProductsChange={refetchProducts}
           />
         </div>
       ) : (
@@ -199,7 +222,7 @@ const Index = () => {
           {showNewOrder && (
             <NewOrderForm
               products={products}
-              onSubmit={handleCreateOrder}
+              onSubmit={handleOrderSubmit}
               editingOrder={editingOrder ? orders.find(o => o.id === editingOrder) : undefined}
               onCancel={handleCancelOrder}
             />

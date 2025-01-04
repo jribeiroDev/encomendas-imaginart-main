@@ -111,7 +111,24 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
       name: newProductName,
       price: price,
       quantity: quantity,
+    }, {
+      onSuccess: () => {
+        // Clear fields after successful update
+        setNewProductName('');
+        setNewProductPrice('');
+        setNewProductQuantity('');
+        setEditingProduct(null);
+      }
     });
+  };
+
+  const handleCancelEdit = () => {
+    // Clear all fields
+    setNewProductName('');
+    setNewProductPrice('');
+    setNewProductQuantity('');
+    // Reset editing state
+    setEditingProduct(null);
   };
 
   // Sort products alphabetically by name
@@ -157,15 +174,13 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
               <Plus className="w-4 h-4 mr-2" />
               {editingProduct ? 'Atualizar' : 'Adicionar'}
             </Button>
-            {editingProduct && (
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => setEditingProduct(null)}
-              >
-                Cancelar
-              </Button>
-            )}
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={handleCancelEdit}
+            >
+              Cancelar
+            </Button>
           </div>
         </div>
       </Card>

@@ -64,21 +64,29 @@ const NewOrderForm = ({ products, onSubmit, editingOrder, onCancel }: NewOrderFo
       []
     );
 
-    onSubmit({
+    const orderData = {
       name: orderName,
       description: orderDescription,
       products: combinedProducts,
-      status: editingOrder?.status || 'pendente'
-    });
+      status: editingOrder?.status || 'pendente',
+      ...(editingOrder && { id: editingOrder.id })
+    };
 
-    setOrderName('');
-    setOrderDescription('');
-    setOrderProducts([]);
-    toast.success(editingOrder ? 'Encomenda atualizada com sucesso' : 'Encomenda criada com sucesso');
+    onSubmit(orderData);
+    onCancel();
+  };
+
+  const checkStock = (productId: string, requestedQuantity: number) => {
+    const product = products.find(p => p.id === productId);
+    return product ? product.quantity >= requestedQuantity : false;
   };
 
   const sortedProducts = products
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(p => ({
+      ...p,
+      displayName: `${p.name} - €${p.price.toFixed(2)} ${p.quantity === 0 ? '(Sem Stock)' : `- Stock: ${p.quantity}`}`
+    }));
 
   return (
     <Card className="p-4">
@@ -110,8 +118,11 @@ const NewOrderForm = ({ products, onSubmit, editingOrder, onCancel }: NewOrderFo
               </SelectTrigger>
               <SelectContent>
                 {sortedProducts.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.name} - €{product.price.toFixed(2)} - Stock: {product.quantity}
+                  <SelectItem 
+                    key={product.id} 
+                    value={product.id}
+                  >
+                    {product.displayName}
                   </SelectItem>
                 ))}
               </SelectContent>
