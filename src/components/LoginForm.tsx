@@ -55,16 +55,15 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              required
             />
           </div>
           <div className="space-y-2">
             <Input
               type="password"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
             />
           </div>
           <Button 
