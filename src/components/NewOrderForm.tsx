@@ -104,7 +104,7 @@ const NewOrderForm = ({ products, onSubmit, editingOrder, onCancel }: NewOrderFo
         />
 
         {orderProducts.map((orderProduct, index) => (
-          <div key={index} className="flex gap-4">
+          <div key={index} className="flex flex-col sm:flex-row gap-2">
             <Select
               value={orderProduct.productId}
               onValueChange={(value) => {
@@ -118,35 +118,34 @@ const NewOrderForm = ({ products, onSubmit, editingOrder, onCancel }: NewOrderFo
               </SelectTrigger>
               <SelectContent>
                 {sortedProducts.map((product) => (
-                  <SelectItem 
-                    key={product.id} 
-                    value={product.id}
-                  >
+                  <SelectItem key={product.id} value={product.id}>
                     {product.displayName}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Input
-              type="number"
-              min="1"
-              value={orderProduct.quantity}
-              onChange={(e) => {
-                const newProducts = [...orderProducts];
-                newProducts[index].quantity = parseInt(e.target.value) || 1;
-                setOrderProducts(newProducts);
-              }}
-              className="w-24"
-            />
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                min="1"
+                value={orderProduct.quantity}
+                onChange={(e) => {
+                  const newProducts = [...orderProducts];
+                  newProducts[index].quantity = parseInt(e.target.value) || 1;
+                  setOrderProducts(newProducts);
+                }}
+                className="w-24"
+              />
 
-            <Button
-              variant="destructive"
-              size="icon"
-              onClick={() => handleRemoveProduct(index)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+              <Button
+                variant="destructive"
+                size="icon"
+                onClick={() => handleRemoveProduct(index)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         ))}
 
@@ -160,16 +159,18 @@ const NewOrderForm = ({ products, onSubmit, editingOrder, onCancel }: NewOrderFo
           Adicionar Produto
         </Button>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-col sm:flex-row justify-end gap-2">
           <Button
             type="button"
             variant="outline"
+            className="w-full sm:w-auto"
             onClick={onCancel}
           >
             Cancelar
           </Button>
           <Button 
-            type="button" 
+            type="button"
+            className="w-full sm:w-auto"
             onClick={handleSubmit}
           >
             {editingOrder ? 'Atualizar' : 'Criar'} Encomenda

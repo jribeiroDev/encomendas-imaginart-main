@@ -147,7 +147,7 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
               onChange={(e) => setNewProductName(e.target.value)}
             />
           </div>
-          <div>
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               type="number"
               step="0.01"
@@ -166,21 +166,22 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
               onChange={(e) => setNewProductQuantity(e.target.value)}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row justify-end gap-2">
             <Button 
-              className="w-full"
+              className="w-full sm:w-[120px]"
               onClick={editingProduct ? handleUpdateProduct : handleAddProduct}
             >
-              <Plus className="w-4 h-4 mr-2" />
               {editingProduct ? 'Atualizar' : 'Adicionar'}
             </Button>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={handleCancelEdit}
-            >
-              Cancelar
-            </Button>
+            {editingProduct && (
+              <Button 
+                variant="outline" 
+                className="w-full sm:w-[120px]"
+                onClick={handleCancelEdit}
+              >
+                Cancelar
+              </Button>
+            )}
           </div>
         </div>
       </Card>

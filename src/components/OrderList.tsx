@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Order, Product } from '@/types';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Pencil } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -249,7 +249,7 @@ const OrderList = ({
             </div>
 
             <div className="pt-2 border-t">
-              <div className="font-medium">Valor Total: €{grandTotal.toFixed(2)}</div>
+              <div className="font-medium text-lg">Valor Total: €{grandTotal.toFixed(2)}</div>
             </div>
           </div>
         </div>
