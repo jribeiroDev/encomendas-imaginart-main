@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -45,35 +45,35 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <Card className="w-full max-w-md p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <h1 className="text-2xl font-bold text-center mb-6">ImaginArte</h1>
-          <div className="space-y-2">
-            <Input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Input
-              type="password"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isLoading}
-          >
-            {isLoading ? 'A entrar...' : 'Entrar'}
-          </Button>
-        </form>
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <Card className="w-full max-w-sm p-4">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl text-center">Imagin'Arte</CardTitle>
+          
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Input
+                type="text"
+                className="w-full"
+                placeholder="Usuário"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              <Input
+                type="password"
+                className="w-full"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <Button className="w-full" type="submit">
+              Entrar
+            </Button>
+          </form>
+        </CardContent>
       </Card>
     </div>
   );

@@ -169,7 +169,7 @@ const Index = () => {
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
         <h1 className="text-3xl font-bold">Encomendas Imagin'Arte</h1>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row  items-center gap-4">
           {!showCompleted && (
             <Button
               variant="outline"
