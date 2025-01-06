@@ -225,18 +225,20 @@ const ProductManagement = ({ products, onProductsChange, onClose }: ProductManag
             </div>
             <div className="flex gap-2">
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="icon"
+                className="h-10 w-10 p-0 border-gray-200"
                 onClick={() => handleEditClick(product)}
               >
-                <Pencil className="h-4 w-4" />
+                <Pencil className="h-4 w-4 hover:text-black" />
               </Button>
               <Button 
-                variant="ghost" 
-                size="icon" 
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 p-0 border-gray-200"
                 onClick={() => deleteProductMutation.mutate(product.id)}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
               </Button>
             </div>
           </div>
