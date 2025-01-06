@@ -97,11 +97,19 @@ const Index = () => {
     updateOrderMutation.mutate({ id: orderId, order: { status } });
   };
 
-  const handleEditOrder = (orderId: string) => {
-    const order = orders.find(o => o.id === orderId);
-    if (order) {
-      setEditingOrder(orderId);
-      setShowNewOrder(true);
+  const handleEditOrder = async (orderId: string, orderData: Order) => {
+    try {
+      await updateOrder(orderId, orderData);
+      await Promise.all([
+        refetchOrders(),
+        refetchProducts(),
+        queryClient.invalidateQueries({ queryKey: ['orders'] }),
+        queryClient.invalidateQueries({ queryKey: ['products'] })
+      ]);
+      toast.success('Encomenda atualizada com sucesso!');
+    } catch (error) {
+      console.error('Error updating order:', error);
+      toast.error('Erro ao atualizar encomenda');
     }
   };
 
@@ -209,6 +217,7 @@ const Index = () => {
           <ProductManagement
             products={products}
             onProductsChange={refetchProducts}
+            onClose={() => setShowProducts(false)}
           />
         </div>
       ) : (

@@ -16,12 +16,13 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getFinancialValues, updateFinancialValues } from "@/services/database";
+import NewOrderForm from './NewOrderForm';
 
 interface OrderListProps {
   orders: Order[];
   products: Product[];
   onStatusChange: (orderId: string, status: 'pendente' | 'iniciada' | 'falta_pagamento' | 'concluida') => void;
-  onEditOrder: (orderId: string) => void;
+  onEditOrder: (orderId: string, updatedOrder: Order) => void;
   onDeleteOrder: (orderId: string) => void;
   showCompleted?: boolean;
   onProductCheck: (orderId: string, productId: string, checked: boolean) => void;
@@ -43,6 +44,7 @@ const OrderList = ({
   const [isEditingCasa, setIsEditingCasa] = useState(false);
   const [tempBancoValue, setTempBancoValue] = useState<string>('0');
   const [tempCasaValue, setTempCasaValue] = useState<string>('0');
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
 
   // Query for financial values
   const { data: financialValues } = useQuery({
@@ -332,9 +334,9 @@ const OrderList = ({
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  onClick={() => onEditOrder(order.id)}
+                  onClick={() => setEditingOrderId(editingOrderId === order.id ? null : order.id)}
                 >
-                  <Edit className="w-4 h-4" />
+                  <Pencil className="w-4 h-4" />
                 </Button>
                 <Button 
                   variant="destructive" 
@@ -346,6 +348,21 @@ const OrderList = ({
               </div>
             </div>
           </div>
+
+          {/* Edit Form */}
+          {editingOrderId === order.id && (
+            <div className="mt-4 border-t pt-4">
+              <NewOrderForm
+                products={products}
+                onSubmit={(updatedOrder) => {
+                  onEditOrder(order.id, { ...updatedOrder, id: order.id });
+                  setEditingOrderId(null);
+                }}
+                editingOrder={order}
+                onCancel={() => setEditingOrderId(null)}
+              />
+            </div>
+          )}
         </Card>
       ))}
       {filteredOrders.length === 0 && (

@@ -12,7 +12,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { toast } from 'sonner';
 import { Order, Product } from '@/types';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface NewOrderFormProps {
   products: Product[];
@@ -126,17 +126,46 @@ const NewOrderForm = ({ products, onSubmit, editingOrder, onCancel }: NewOrderFo
             </Select>
 
             <div className="flex gap-2">
-              <Input
-                type="number"
-                min="1"
-                value={orderProduct.quantity}
-                onChange={(e) => {
-                  const newProducts = [...orderProducts];
-                  newProducts[index].quantity = parseInt(e.target.value) || 1;
-                  setOrderProducts(newProducts);
-                }}
-                className="w-24"
-              />
+              <div className="relative w-24">
+                <Input
+                  type="number"
+                  min="1"
+                  value={orderProduct.quantity}
+                  onChange={(e) => {
+                    const newProducts = [...orderProducts];
+                    newProducts[index].quantity = parseInt(e.target.value) || 1;
+                    setOrderProducts(newProducts);
+                  }}
+                />
+                <div className="absolute right-0 top-0 h-full flex flex-col border-l">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-1/2 px-2"
+                    onClick={() => {
+                      const newProducts = [...orderProducts];
+                      newProducts[index].quantity = (parseInt(orderProduct.quantity.toString()) || 0) + 1;
+                      setOrderProducts(newProducts);
+                    }}
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-1/2 px-2 border-t"
+                    onClick={() => {
+                      const newProducts = [...orderProducts];
+                      newProducts[index].quantity = Math.max(1, (parseInt(orderProduct.quantity.toString()) || 1) - 1);
+                      setOrderProducts(newProducts);
+                    }}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
 
               <Button
                 variant="destructive"

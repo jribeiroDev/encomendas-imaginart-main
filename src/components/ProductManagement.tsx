@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Product } from '@/types';
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Pencil, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createProduct, deleteProduct, updateProduct } from '@/services/database';
@@ -11,13 +11,21 @@ import { createProduct, deleteProduct, updateProduct } from '@/services/database
 interface ProductManagementProps {
   products: Product[];
   onProductsChange: () => void;
+  onClose: () => void;
 }
 
-const ProductManagement = ({ products, onProductsChange }: ProductManagementProps) => {
+const ProductManagement = ({ products, onProductsChange, onClose }: ProductManagementProps) => {
+  // Separate states for add form
   const [newProductName, setNewProductName] = useState('');
   const [newProductPrice, setNewProductPrice] = useState('');
   const [newProductQuantity, setNewProductQuantity] = useState('');
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Separate states for edit form
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editProductName, setEditProductName] = useState('');
+  const [editProductPrice, setEditProductPrice] = useState('');
+  const [editProductQuantity, setEditProductQuantity] = useState('');
+
   const queryClient = useQueryClient();
 
   const createProductMutation = useMutation({
@@ -54,7 +62,10 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       onProductsChange();
-      setEditingProduct(null);
+      setEditingProductId(null);
+      setEditProductName('');
+      setEditProductPrice('');
+      setEditProductQuantity('');
       toast.success('Produto atualizado com sucesso');
     },
     onError: (error) => {
@@ -84,22 +95,23 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
     });
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    deleteProductMutation.mutate(productId);
+  const handleEditClick = (product: Product) => {
+    if (editingProductId === product.id) {
+      setEditingProductId(null);
+      setEditProductName('');
+      setEditProductPrice('');
+      setEditProductQuantity('');
+    } else {
+      setEditingProductId(product.id);
+      setEditProductName(product.name);
+      setEditProductPrice(product.price.toString());
+      setEditProductQuantity(product.quantity.toString());
+    }
   };
 
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
-    setNewProductName(product.name);
-    setNewProductPrice(product.price.toString());
-    setNewProductQuantity(product.quantity?.toString() || '0');
-  };
-
-  const handleUpdateProduct = () => {
-    if (!editingProduct) return;
-
-    const price = parseFloat(newProductPrice);
-    const quantity = parseInt(newProductQuantity);
+  const handleUpdateProduct = (productId: string) => {
+    const price = parseFloat(editProductPrice);
+    const quantity = parseInt(editProductQuantity);
     
     if (isNaN(price) || price <= 0 || isNaN(quantity) || quantity < 0) {
       toast.error('Por favor, insira valores válidos');
@@ -107,122 +119,224 @@ const ProductManagement = ({ products, onProductsChange }: ProductManagementProp
     }
 
     updateProductMutation.mutate({
-      ...editingProduct,
-      name: newProductName,
+      id: productId,
+      name: editProductName,
       price: price,
       quantity: quantity,
-    }, {
-      onSuccess: () => {
-        // Clear fields after successful update
-        setNewProductName('');
-        setNewProductPrice('');
-        setNewProductQuantity('');
-        setEditingProduct(null);
-      }
     });
   };
 
-  const handleCancelEdit = () => {
-    // Clear all fields
-    setNewProductName('');
-    setNewProductPrice('');
-    setNewProductQuantity('');
-    // Reset editing state
-    setEditingProduct(null);
-  };
-
-  // Sort products alphabetically by name
-  const sortedProducts = [...products].sort((a, b) => 
+  // Sort products alphabetically
+  const sortedProducts = products?.sort((a, b) => 
     a.name.localeCompare(b.name)
-  );
+  ) || [];
 
   return (
     <div className="space-y-4">
+      {/* Add Product Form */}
       <Card className="p-4">
         <div className="space-y-4">
-          <div>
-            <Input
-              placeholder="Nome do produto"
-              value={newProductName}
-              onChange={(e) => setNewProductName(e.target.value)}
-            />
-          </div>
+          <Input
+            placeholder="Nome do produto"
+            value={newProductName}
+            onChange={(e) => setNewProductName(e.target.value)}
+          />
           <div className="flex flex-col sm:flex-row gap-2">
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Preço"
-              value={newProductPrice}
-              onChange={(e) => setNewProductPrice(e.target.value)}
-            />
+            <div className="relative flex-1">
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Preço"
+                value={newProductPrice}
+                onChange={(e) => setNewProductPrice(e.target.value)}
+              />
+              <div className="absolute right-0 top-0 h-full flex flex-col border-l">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-1/2 px-2"
+                  onClick={() => setNewProductPrice(((parseFloat(newProductPrice) || 0) + 0.10).toFixed(2))}
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-1/2 px-2 border-t"
+                  onClick={() => setNewProductPrice(Math.max(0, (parseFloat(newProductPrice) || 0) - 0.10).toFixed(2))}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="relative flex-1">
+              <Input
+                type="number"
+                min="0"
+                placeholder="Quantidade"
+                value={newProductQuantity}
+                onChange={(e) => setNewProductQuantity(e.target.value)}
+              />
+              <div className="absolute right-0 top-0 h-full flex flex-col border-l">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-1/2 px-2"
+                  onClick={() => setNewProductQuantity(((parseInt(newProductQuantity) || 0) + 1).toString())}
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-1/2 px-2 border-t"
+                  onClick={() => setNewProductQuantity(Math.max(0, (parseInt(newProductQuantity) || 0) - 1).toString())}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
-          <div>
-            <Input
-              type="number"
-              min="0"
-              placeholder="Quantidade"
-              value={newProductQuantity}
-              onChange={(e) => setNewProductQuantity(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row justify-end gap-2">
+          <div className="flex justify-end">
             <Button 
-              className="w-full sm:w-[120px]"
-              onClick={editingProduct ? handleUpdateProduct : handleAddProduct}
+              className="w-[120px]"
+              onClick={handleAddProduct}
             >
-              {editingProduct ? 'Atualizar' : 'Adicionar'}
+              Adicionar
             </Button>
-            {editingProduct && (
-              <Button 
-                variant="outline" 
-                className="w-full sm:w-[120px]"
-                onClick={handleCancelEdit}
-              >
-                Cancelar
-              </Button>
-            )}
           </div>
         </div>
       </Card>
 
+      {/* Product List */}
       {sortedProducts.map((product) => (
         <Card key={product.id} className="p-4">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-2">
             <div>
-              <span className="font-medium">{product.name}</span>
-              <span className="ml-4 text-muted-foreground">
-                €{product.price.toFixed(2)}
-              </span>
-              <span className="ml-4 text-muted-foreground">
-                Qtd: {product.quantity || 0}
-              </span>
+              <p className="font-medium">{product.name}</p>
+              <p className="text-sm text-muted-foreground">
+                €{product.price.toFixed(2)} - Stock: {product.quantity}
+              </p>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
+              <Button 
+                variant="ghost" 
                 size="icon"
-                onClick={() => handleEditProduct(product)}
+                onClick={() => handleEditClick(product)}
               >
-                <Pencil className="w-4 h-4" />
+                <Pencil className="h-4 w-4" />
               </Button>
-              <Button
-                variant="destructive"
-                size="icon"
-                onClick={() => handleDeleteProduct(product.id)}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => deleteProductMutation.mutate(product.id)}
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           </div>
+
+          {editingProductId === product.id && (
+            <div className="mt-4 border-t pt-4">
+              <div className="space-y-4">
+                <Input
+                  placeholder="Nome do produto"
+                  value={editProductName}
+                  onChange={(e) => setEditProductName(e.target.value)}
+                />
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="Preço"
+                      value={editProductPrice}
+                      onChange={(e) => setEditProductPrice(e.target.value)}
+                    />
+                    <div className="absolute right-0 top-0 h-full flex flex-col border-l">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-1/2 px-2"
+                        onClick={() => setEditProductPrice(((parseFloat(editProductPrice) || 0) + 0.10).toFixed(2))}
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-1/2 px-2 border-t"
+                        onClick={() => setEditProductPrice(Math.max(0, (parseFloat(editProductPrice) || 0) - 0.10).toFixed(2))}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="relative flex-1">
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="Quantidade"
+                      value={editProductQuantity}
+                      onChange={(e) => setEditProductQuantity(e.target.value)}
+                    />
+                    <div className="absolute right-0 top-0 h-full flex flex-col border-l">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-1/2 px-2"
+                        onClick={() => setEditProductQuantity(((parseInt(editProductQuantity) || 0) + 1).toString())}
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-1/2 px-2 border-t"
+                        onClick={() => setEditProductQuantity(Math.max(0, (parseInt(editProductQuantity) || 0) - 1).toString())}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button 
+                    className="w-[120px]"
+                    onClick={() => handleUpdateProduct(product.id)}
+                  >
+                    Atualizar
+                  </Button>
+                  {editingProductId === product.id && (
+                    <Button 
+                      variant="outline" 
+                      className="w-[120px]"
+                      onClick={() => {
+                        setEditingProductId(null);
+                        setEditProductName('');
+                        setEditProductPrice('');
+                        setEditProductQuantity('');
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </Card>
       ))}
-
-      {products.length === 0 && (
-        <div className="text-center text-muted-foreground py-8">
-          Sem produtos
-        </div>
-      )}
     </div>
   );
 };
