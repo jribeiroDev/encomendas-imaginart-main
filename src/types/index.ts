@@ -17,4 +17,5 @@ export interface Order {
   description?: string;
   products: OrderProduct[];
   status: 'pendente' | 'iniciada' | 'concluida' | 'falta_pagamento';
+  completed_at: string;
 }

@@ -262,6 +262,11 @@ const OrderList = ({
           <div className="flex flex-col sm:flex-row justify-between gap-4">
             <div className="flex-1">
               <h3 className="font-medium text-lg">{order.name}</h3>
+              {order.status === 'concluida' && (
+                <p className="text-sm ">
+                  Concluída em: {new Date(order.completed_at).toLocaleDateString()}
+                </p>
+              )}
               {order.description && (
                 <p className="text-sm text-muted-foreground mt-1">{order.description}</p>
               )}
