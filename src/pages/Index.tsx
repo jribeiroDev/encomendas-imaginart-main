@@ -94,7 +94,13 @@ const Index = () => {
   });
 
   const handleStatusChange = (orderId: string, status: 'pendente' | 'iniciada' | 'concluida') => {
-    updateOrderMutation.mutate({ id: orderId, order: { status } });
+    const orderUpdate: Partial<Order> = { status };
+    
+    if (status === 'concluida') {
+      orderUpdate.completed_at = new Date().toISOString();
+    }
+    
+    updateOrderMutation.mutate({ id: orderId, order: orderUpdate });
   };
 
   const handleEditOrder = async (orderId: string, orderData: Order) => {

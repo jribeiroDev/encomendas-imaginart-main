@@ -180,11 +180,7 @@ export const updateOrder = async (id: string, order: Partial<Order>) => {
     // Update the order details
     const { data: updatedOrder, error: orderError } = await supabase
       .from('orders')
-      .update({
-        name: order.name,
-        description: order.description,
-        status: order.status
-      })
+      .update(order)
       .eq('id', id)
       .select()
       .single();
