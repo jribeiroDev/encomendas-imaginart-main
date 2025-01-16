@@ -182,6 +182,8 @@ export const updateOrder = async (id: string, order: Partial<Order>) => {
         name: order.name,
         description: order.description,
         status: order.status,
+        completed_at:
+          order.status === "concluida" ? new Date().toISOString() : null, // Set completed_at if status is 'concluida'
         // Do not include products here if it's not a direct column
       })
       .eq("id", id)
